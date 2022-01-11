@@ -49,7 +49,7 @@ int main ( void )
 
    // Run all tests using the basic interface
    CU_basic_set_mode(CU_BRM_VERBOSE);
-   CU_basic_run_tests();
+   CU_automated_run_tests();
    printf("\n");
    CU_basic_show_failures(CU_get_failure_list());
    printf("\n\n");
