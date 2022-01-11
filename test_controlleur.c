@@ -1,7 +1,7 @@
 #include "CUnit.h"
 #include "Basic.h"
-//#include "CUnit/Automated.h"
-//#include "CUnit/Console.h"
+#include "Automated.h"
+#include "Console.h"
 
 #include "controlleur.h"
 
