@@ -19,7 +19,7 @@ void test_ecartVal(void)
   CU_ASSERT(CU_TRUE);
   CU_ASSERT_NOT_EQUAL(2, -1);
   CU_ASSERT(ecartVal(15,10));
-  CU_ASSERT(!ecartVal(12,10));     
+  CU_ASSERT(ecartVal(12,10));     
 }
 
 
