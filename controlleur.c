@@ -12,13 +12,13 @@ bool oxydoValide[3];
 bool phValide[3];
 
 //Tableau des 10 dernières moyennes pour chaque type de capteur
-float lastTemperature[10];
-float lastOxydo[10];
-float lastPh[10];
+float lastTemperature[10] = {10.0,9.6,10.2,10.3,10.5,9.8,10.1,10.8,9.3,10.0};
+float lastPh[10] = {7.5,7.3,6.9,6.8,7.1,7.1,7.2,7.3,7.0,7.2};
+float lastOxydo[10] = {5.3,4.6,5.1,5.0,5.2,5.3,5.0,5.7,5.0,4.9};
 
 
-//Variable entière spécifiant le nombre de mesures effectués
-int nbMesures = 0;
+bool msg_sent = false;
+bool notif_sent = false;
 
 
 float float_rand( float min, float max )
@@ -34,15 +34,19 @@ void inputTroisCapteurs(){
 
     for(int i=0; i<3; i++){
         temperature[i] = float_rand(9.0,11.0);
-        printf("%f\n",temperature[i]);
+        //printf("%f\n",temperature[i]);
     }
 
     for(int i=0; i<3; i++){
-        oxydo[i] = float_rand(14.0,18.0);
+        oxydo[i] = float_rand(4.0,6.0);
+        //printf("%f\n",oxydo[i]);
+
     }
+
 
     for(int i=0; i<3; i++){
         ph[i] = float_rand(6.0,8.0);
+        //printf("%f\n",ph[i]);
     }
 
 }
@@ -54,7 +58,6 @@ void inputTemperature(){
         scanf("%f\n",&temperature[i]);
     }
 }
-
 
 void inputOxydo(){
 
@@ -134,8 +137,9 @@ float moyenneMesuresValides(float capteur[3], bool valide[3]){
             compteurValide++;
         } 
     }
-    return moyenne /= compteurValide;
+    moyenne /= compteurValide;
 
+    return moyenne;
 }
 
 //Calcule moyenne d'un tableau de 10 float
@@ -147,6 +151,19 @@ float moyenneArray(float tab[10]){
 
     return moyenne/= 10.0;
 
+}
+
+
+
+void send_msg(){
+
+    msg_sent = true;    
+
+}
+
+void send_notif(){
+
+    notif_sent = true;
 }
 
 
@@ -166,14 +183,24 @@ bool detectionPollution(float moyenneT, float moyenneO, float moyenneP){
     {
         pic=true;
         printf("*** PIC DE POLLUTION DETECTE ***\n");
+        send_notif();
     }
     else {
         pic=false;
-        printf("*** ALL CLEAR ***");
+        printf("*** PAS DE PIC DE POLLUTION ***\n");
     }
 
     return pic;
 }
+
+
+
+
+/**
+  * 1. SI 2 jeux de mesures consécutifs sont invalides, mode defaillance
+  * 2. Calcul des moyennes
+  * 3. Detection pollution
+*/
 
 void vote(){
 
@@ -188,14 +215,15 @@ void vote(){
 
     if(compteurMesuresValides(temperatureValide)==0 || compteurMesuresValides(oxydoValide)==0 || compteurMesuresValides(phValide)==0){
         printf("ERREUR - MESURES NON VALIDES : NOUVELLES MESURES");
-        inputTroisCapteurs();
-        
+
+
         mesuresValides(temperature, temperatureValide);
         mesuresValides(oxydo, oxydoValide);
         mesuresValides(ph, phValide);
 
         if(compteurMesuresValides(temperatureValide)==0 || compteurMesuresValides(oxydoValide)==0 || compteurMesuresValides(phValide)==0){
             printf("ERREUR - DEUX FOIS MESURES NON VALIDES : MODE DEFAILLANCE\n");
+            send_notif();
             exit(0);
         }
     }
@@ -207,38 +235,28 @@ void vote(){
 
     printf("Moyenne Temp %f\n",moyenneTemperature);
     printf("Moyenne Oxydo %f\n",moyenneOxydo);
+    printf("Moyenne ph %f\n",moyennePh);
 
-    printf("NB MESURES %d\n",nbMesures);
-    //Remplir les tableaux des 10 dernières mesures
-    if(nbMesures < 10){
-        lastTemperature[nbMesures] = moyenneTemperature;
-        lastOxydo[nbMesures] = moyenneOxydo;
-        lastPh[nbMesures] = moyennePh;
+    // Détection pollution puis décalage pour acceuillir les nouvelles valeurs
 
+    detectionPollution(moyenneTemperature, moyenneOxydo, moyennePh);
+
+    for(int i=1; i<9;i++){
+        lastTemperature[i-1] = lastTemperature[i];
+        lastOxydo[i-1] = lastOxydo[i];
+        lastPh[i-1] = lastPh[i];
     }
+    lastTemperature[9] = moyenneTemperature;
+    lastOxydo[9] = moyenneOxydo;
+    lastPh[9] = moyennePh;
 
-    //Si tableau plein, détection pollution puis décalage pour acceuillir les nouvelles valeurs
-    else{
-
-        printf("**  10 dernières moyennes Temp: \n**");
-        for(int i=0; i<10;i++){
-            printf("%f, ", lastTemperature[i]);
-        }
-        printf("\n\n");
-
-        detectionPollution(moyenneTemperature, moyenneOxydo, moyennePh);
-
-        for(int i=1; i<9;i++){
-            lastTemperature[i-1] = lastTemperature[i];
-            lastOxydo[i-1] = lastOxydo[i];
-            lastPh[i-1] = lastPh[i];
-        }
-        lastTemperature[9] = moyenneTemperature;
-        lastOxydo[9] = moyenneOxydo;
-        lastPh[9] = moyennePh;
-
+    printf("**  10 dernières moyennes Temp: \n**");
+    for(int i=0; i<10;i++){
+        printf("%f, ", lastTemperature[i]);
     }
-    //valideCompteur--;
+    printf("\n\n");
+
+    send_msg();
 
 }
 
@@ -283,6 +301,12 @@ void tests_print(){
     evalBool(testBool, true);
 
 
+    printf("\n******** Tests EXIG 6 (fonction detectionPollution) *********\n");
+    printf("\tTest 1: Inputs moyenneT=18, moyenneO=16, moyenneP=7\n");
+    testBool= detectionPollution(10,5,7);
+    printf("\t\t => Output : ");
+    evalBool(testBool, false);
+
 
 
 }
@@ -291,15 +315,10 @@ void tests_print(){
 int main(){
 
     printf("Démarrage système");
+    inputTroisCapteurs();
+    tests_print();
 
-    while(1){
 
-        printf("***** MESURES %d *****\n",nbMesures);
-        inputTroisCapteurs();
-        nbMesures++;
-        vote();
-
-    }
 
 
     return 0;

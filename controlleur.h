@@ -3,6 +3,10 @@
 #include <stdbool.h>
 #include <math.h>
 
+bool msg_sent;
+bool notif_sent;
+
+
 void inputTroisCapteurs();
 void inputTemperature();
 void inputOxydo();

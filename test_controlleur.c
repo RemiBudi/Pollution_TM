@@ -19,9 +19,24 @@ void test_ecartVal(void)
   CU_ASSERT(CU_TRUE);
   CU_ASSERT_NOT_EQUAL(2, -1);
   CU_ASSERT(ecartVal(15,10));
-  CU_ASSERT(ecartVal(12,10));     
+  CU_ASSERT(!ecartVal(12,10));     
 }
 
+void test_detectionPollution(void){
+
+
+  CU_ASSERT(detectionPollution(18,16,7));
+  CU_ASSERT(!detectionPollution(10,5,7));
+
+}
+
+void test_send(void){
+
+  detectionPollution(18,16,7);
+  CU_ASSERT(notif_sent);
+
+
+}
 
 /************* Test Runner Code goes here **************/
 
@@ -41,7 +56,11 @@ int main ( void )
    }
 
    /* add the tests to the suite */
-   if ( (NULL == CU_add_test(pSuite, "Test exigence 3 (ecartVal):", test_ecartVal)))
+   if ( (NULL == CU_add_test(pSuite, "Exigence 3 (fonction ecartVal): *******", test_ecartVal))
+     || (NULL == CU_add_test(pSuite, "Exigence 6 (fonction detectionPollution): ******", test_ecartVal))
+     || (NULL == CU_add_test(pSuite, "Exigence 1 (fonction detectionPollution): ******", test_send))
+     )
+
    {
       CU_cleanup_registry();
       return CU_get_error();
@@ -49,7 +68,7 @@ int main ( void )
 
    // Run all tests using the basic interface
    CU_basic_set_mode(CU_BRM_VERBOSE);
-   CU_automated_run_tests();
+   CU_basic_run_tests();
    printf("\n");
    CU_basic_show_failures(CU_get_failure_list());
    printf("\n\n");
