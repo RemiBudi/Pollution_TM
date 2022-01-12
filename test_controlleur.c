@@ -22,7 +22,6 @@ void test_ecartVal(void)
   CU_ASSERT(!ecartVal(12,10));     
 }
 
-
 /************* Test Runner Code goes here **************/
 
 int main ( void )
